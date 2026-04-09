@@ -1,0 +1,2 @@
+# NO CMD via PS
+powershell -Command "$word = New-Object -ComObject Word.Application; $word.Visible = $false; $doc = $word.Documents.Add(); Get-ChildItem -Path 'C:\Users\hp01\Desktop' -Filter *.docx | Sort-Object Name | ForEach-Object { $range = $doc.Content; $range.Collapse(0); $range.InsertFile($_.FullName); $range.InsertParagraphAfter(); }; $doc.SaveAs('C:\Users\hp01\Desktop\unido.docx'); $doc.Close(); $word.Quit()"
