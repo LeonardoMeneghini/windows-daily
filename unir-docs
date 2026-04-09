@@ -1,15 +1,44 @@
-# Unir arquivos DOC via PS
+# NO POWERSHELL
+# Caminhos
+$pasta = "C:\Users\hp01\Desktop"
+$saida = "$pasta\unido.docx"
+$log = "$pasta\log_uniao.txt"
 
-powershell -Command ^
-"$word = New-Object -ComObject Word.Application; ^
-$word.Visible = $false; ^
-$doc = $word.Documents.Add(); ^
-Get-ChildItem -Path 'C:\docs' -Filter *.docx | Sort-Object Name | ForEach-Object { ^
-    $range = $doc.Content; ^
-    $range.Collapse(0); ^
-    $range.InsertFile($_.FullName); ^
-    $range.InsertParagraphAfter(); ^
-}; ^
-$doc.SaveAs('C:\docs\unido.docx'); ^
-$doc.Close(); ^
-$word.Quit()"
+# Inicia log
+"=== INÍCIO: $(Get-Date) ===" | Out-File $log
+
+try {
+    $word = New-Object -ComObject Word.Application
+    $word.Visible = $false
+
+    $doc = $word.Documents.Add()
+
+    Get-ChildItem -Path $pasta -Filter *.docx |
+    Sort-Object Name |
+    Where-Object { $_.Name -ne "unido.docx" } |  # evita loop
+    ForEach-Object {
+        "Processando: $($_.FullName)" | Tee-Object -FilePath $log -Append
+
+        $range = $doc.Content
+        $range.Collapse(0)
+        $range.InsertFile($_.FullName)
+
+        # quebra de página (opcional)
+        $range.InsertBreak(7)
+    }
+
+    $doc.SaveAs($saida)
+    $doc.Close()
+    $word.Quit()
+
+    "SUCESSO: Arquivo criado em $saida" | Tee-Object -FilePath $log -Append
+    Write-Host "✅ Processo concluído com sucesso!" -ForegroundColor Green
+}
+catch {
+    "ERRO: $($_.Exception.Message)" | Tee-Object -FilePath $log -Append
+    Write-Host "❌ Ocorreu um erro. Veja o log." -ForegroundColor Red
+}
+
+"=== FIM: $(Get-Date) ===" | Out-File $log -Append
+
+
